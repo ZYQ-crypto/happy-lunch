@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>快乐点餐机 - 美食推荐小程序</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:"PingFang SC","Microsoft YaHei","SF Pro Display",-apple-system,BlinkMacSystemFont,sans-serif;}
+  body {background: linear-gradient(135deg, #ffecd2, #fcb69f); padding:20px; display:flex; justify-content:center; align-items:center; min-height:100vh;}
+  .screens-container {display:flex; gap:40px; flex-wrap:wrap; max-width:800px; width:100%; justify-content:center;}
+  .phone-screen {width:375px; height:812px; border-radius:35px; background:#f7f9fb; box-shadow:0 20px 50px rgba(0,0,0,0.25); overflow:hidden; position:relative; display:flex; flex-direction:column;}
+  .status-bar {background:#fff; display:flex; justify-content:space-between; padding:12px 20px; border-bottom:1px solid #eee;}
+  .current-time {font-size:14px; font-weight:500; color:#333;}
+  .status-icons {display:flex; gap:5px;}
+  .status-icons span, .status-icons i {font-size:14px; color:#444;}
+  .home-header {display:flex; flex-direction:column; align-items:center; padding:40px 30px 20px; background:linear-gradient(to right, #e74c3c, #e67e22); border-radius:0 0 20px 20px; color:white;}
+  .home-header h1 {font-size:30px; font-weight:800; margin-bottom:15px; text-shadow:0 2px 4px rgba(0,0,0,0.2);}
+  .home-header .slogan {font-size:16px; opacity:0.9; text-align:center; margin-bottom:30px;}
+  .form-container {padding:30px 25px 80px; flex-grow:1; display:flex; flex-direction:column;}
+  .input-group {margin-bottom:25px;}
+  .input-group label {display:block; margin-bottom:8px; font-size:16px; font-weight:500; color:#2c3e50;}
+  .input-box {position:relative;}
+  .input-box input, .input-box textarea {width:100%; padding:18px 18px 18px 48px; border:none; border-radius:15px; background:#fff; font-size:16px; box-shadow:0 4px 15px rgba(0,0,0,0.06); border:1px solid #eee; resize:none;}
+  .input-box textarea {height:120px;}
+  .input-box i {position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#e67e22; font-size:20px;}
+  .btn-primary {background:linear-gradient(to right, #e74c3c, #c0392b); color:white; border:none; padding:12px 0; border-radius:15px; font-size:18px; font-weight:700; width:100%; cursor:pointer; box-shadow:0 5px 15px rgba(231,76,60,0.4); transition:all 0.3s ease; letter-spacing:1px; margin-top:20px;}
+  .btn-primary:hover {background:linear-gradient(to right, #c0392b, #e74c3c);}
+  .results-header {padding:20px; display:flex; align-items:center; gap:15px; border-bottom:1px solid #eee; background:white;}
+  .back-btn {width:40px; height:40px; border-radius:12px; background:#f1f1f1; display:flex; align-items:center; justify-content:center; color:#e67e22; cursor:pointer;}
+  .results-header h2 {font-size:22px; color:#2c3e50; user-select:none;}
+  .recommendation-container {padding:25px 20px; overflow-y:auto; -webkit-overflow-scrolling:touch; flex-grow:1;}
+  .recommendation-card {background:white; border-radius:20px; padding:20px; margin-bottom:20px; box-shadow:0 5px 15px rgba(0,0,0,0.05); position:relative; border-left:4px solid #f1c40f; transition: transform 0.3s; cursor:pointer; animation:fadeIn 0.4s ease-in-out; animation-fill-mode:both;}
+  .restaurant-name {font-size:20px; font-weight:700; color:#e67e22; margin-bottom:6px;}
+  .food-item {font-size:16px; color:#333; margin-bottom:5px; font-weight:500;}
+  .restaurant-details {display:flex; gap:15px; margin:10px 0;}
+  .detail-item {display:flex; align-items:center; gap:5px; font-size:14px; color:#555; user-select:none;}
+  .detail-item i {color:#f1c40f;}
+  .recommendation-text {background:#fcf2e4; padding:15px; border-radius:12px; margin-top:15px; font-size:14px; color:#e67e22; line-height:1.5; position:relative;}
+  .recommendation-text:before {content:"\f10d"; font-family:"Font Awesome 6 Free"; font-weight:900; position:absolute; top:5px; left:5px; opacity:0.3;}
+  .recommendation-text:after {content:"\f10e"; font-family:"Font Awesome 6 Free"; font-weight:900; position:absolute; bottom:5px; right:5px; opacity:0.3;}
+  .action-buttons {padding:20px; background:white; display:flex; gap:15px;}
+  .btn-refresh {background:linear-gradient(to right, #3498db, #2c3e50); flex:1; color:white; border:none; border-radius:15px; font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 5px 15px rgba(52,152,219,0.4); transition:all 0.3s ease; padding:15px 0;}
+  .btn-refresh:hover {background:linear-gradient(to right, #2c3e50, #3498db);}
+  .bottom-nav {position:absolute; bottom:0; width:100%; background:white; display:flex; justify-content:space-around; padding:15px 0; border-top:1px solid #eee;}
+  .nav-item {display:flex; flex-direction:column; align-items:center; gap:4px; color:#bdc3c7; cursor:pointer; transition:color 0.3s; user-select:none;}
+  .nav-item.active, .nav-item:hover {color:#e74c3c;}
+  .nav-item i {font-size:20px;}
+  .nav-item span {font-size:12px; font-weight:500;}
+  @keyframes fadeIn {from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);}}
+  .hidden {display:none !important;}
+  .watermark {position:absolute; bottom:10px; right:10px; color:rgba(0,0,0,0.1); font-size:12px; user-select:none;}
+</style>
+</head>
+<body>
+<div class="screens-container">
+
+  <!-- 输入页面 -->
+  <div id="page-input" class="phone-screen">
+    <div class="status-bar">
+      <div class="current-time">13:24</div>
+      <div class="status-icons">
+        <i class="fas fa-signal"></i>
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-three-quarters"></i>
+      </div>
+    </div>
+    <div class="home-header">
+      <svg width="50" height="50" viewBox="0 0 24 24">
+        <path d="M12,2L.5,9.8L1.2,21.5L12,18.3L22.8,21.5L23.5,9.8L12,2z M12.7,17.1L12,17.3l-0.7-0.2L4.8,15.4
+        l0.7-4.7c0.4-0.1,0.7-0.2,1.1-0.4l4,2.3l1.6-3.6c0.3,0.1,0.7,0.1,1,0.1c1.5,0,2.9-0.8,3.6-2.1l3.1,0.4L17.1,14
+        L12.7,17.1z" fill="currentColor"/>
+      </svg>
+      <h1>快乐点餐机</h1>
+      <div class="slogan">智慧美食助手，开启你的美食之旅</div>
+    </div>
+    <div class="form-container">
+      <div class="input-group">
+        <label for="food-input">告诉我你想吃什么</label>
+        <div class="input-box">
+          <i class="fas fa-comment"></i>
+          <textarea id="food-input" placeholder="例如：香辣刺激的川菜、热腾腾的日式拉面、新鲜的海鲜料理..."></textarea>
+        </div>
+      </div>
+      <div class="input-group">
+        <label for="budget-input">预算 (元)</label>
+        <div class="input-box">
+          <i class="fas fa-yen-sign"></i>
+          <input id="budget-input" type="number" placeholder="例如：30" value="50" min="0"/>
+        </div>
+      </div>
+      <button id="start-btn" class="btn-primary"><i class="fas fa-search"></i> 开始推荐</button>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active"><i class="fas fa-home"></i><span>主页</span></div>
+      <div class="nav-item"><i class="fas fa-heart"></i><span>收藏</span></div>
+      <div class="nav-item"><i class="fas fa-history"></i><span>历史</span></div>
+      <div class="nav-item"><i class="fas fa-user"></i><span>我的</span></div>
+    </div>
+    <div class="watermark">输入界面</div>
+  </div>
+
+  <!-- 结果页面 -->
+  <div id="page-result" class="phone-screen hidden">
+    <div class="status-bar">
+      <div class="current-time">13:24</div>
+      <div class="status-icons">
+        <i class="fas fa-signal"></i>
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-three-quarters"></i>
+      </div>
+    </div>
+    <div class="results-header">
+      <div id="back-btn" class="back-btn" title="返回"><i class="fas fa-arrow-left"></i></div>
+      <h2>推荐结果</h2>
+    </div>
+    <div class="recommendation-container"></div>
+    <div class="action-buttons">
+      <button class="btn-refresh" id="refresh-btn"><i class="fas fa-sync"></i> 换一批推荐</button>
+    </div>
+    <div class="watermark">推荐界面</div>
+  </div>
+
+</div>
+
+<script>
+const pageInput = document.getElementById("page-input");
+const pageResult = document.getElementById("page-result");
+const startBtn = document.getElementById("start-btn");
+const backBtn = document.getElementById("back-btn");
+const refreshBtn = document.getElementById("refresh-btn");
+const recommendationContainer = document.querySelector(".recommendation-container");
+const foodInput = document.getElementById("food-input");
+const budgetInput = document.getElementById("budget-input");
+
+let lastQuery = { description: '', budget: 50 };
+let lastResults = [];
+
+// 更新推荐列表
+function renderRecommendations(results) {
+  recommendationContainer.innerHTML = "";
+  results.forEach((item, i) => {
+    const card = document.createElement("div");
+    card.innerHTML = `
+      <a href="${item.link}" target="_blank" style="text-decoration:none; color:inherit;">
+        <div class="recommendation-card" style="animation-delay:${i*0.1}s">
+          <div class="restaurant-name">${item.name}</div>
+          <div class="food-item">招牌菜: ${item.signature_dish}</div>
+          <div class="restaurant-details">
+            <div class="detail-item"><i class="fas fa-money-bill-wave"></i><span>¥${item.price_per_person}/人</span></div>
+            <div class="detail-item"><i class="fas fa-star"></i><span>${item.rating?.toFixed(1) ?? 'N/A'}</span></div>
+            <div class="detail-item"><i class="fas fa-map-marker-alt"></i><span>${item.distance ?? '未知'}km</span></div>
+          </div>
+          <div class="recommendation-text">${item.recommendation}</div>
+        </div>
+      </a>
+    `;
+    recommendationContainer.appendChild(card);
+  });
+}
+
+// 页面切换
+function switchToPage(showPage, hidePage) {
+  showPage.classList.remove("hidden");
+  hidePage.classList.add("hidden");
+}
+
+// 获取推荐数据
+async function fetchRecommendations(description, budget) {
+  try {
+    const res = await fetch("/search", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({description, budget})
+    });
+    const data = await res.json();
+    lastResults = data;
+    renderRecommendations(data);
+  } catch(err) {
+    alert("获取推荐失败，请稍后重试！");
+    console.error(err);
+  }
+}
+
+// 按钮事件
+startBtn.addEventListener("click", ()=>{
+  const foodVal = foodInput.value.trim();
+  const budgetVal = parseFloat(budgetInput.value);
+  if(!foodVal){ alert("请告诉我你想吃什么！"); foodInput.focus(); return; }
+  if(isNaN(budgetVal)||budgetVal<=0){ alert("请输入合理的预算金额！"); budgetInput.focus(); return; }
+  lastQuery={description:foodVal,budget:budgetVal};
+  fetchRecommendations(foodVal,budgetVal);
+  switchToPage(pageResult,pageInput);
+});
+
+backBtn.addEventListener("click", ()=>{ switchToPage(pageInput,pageResult); });
+
+refreshBtn.addEventListener("click", ()=>{
+  if(!lastQuery.description) return;
+  refreshBtn.disabled=true;
+  refreshBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 正在推荐...';
+  setTimeout(()=>{
+    fetchRecommendations(lastQuery.description,lastQuery.budget).finally(()=>{
+      refreshBtn.disabled=false;
+      refreshBtn.innerHTML='<i class="fas fa-sync"></i> 换一批推荐';
+    });
+  },500);
+});
+
+[foodInput,budgetInput].forEach(input=>{
+  input.addEventListener("focus",()=>{ input.style.borderColor="#e67e22"; });
+  input.addEventListener("blur",()=>{ input.style.borderColor="#eee"; });
+});
+
+// ======== 实时显示本地时间 ========
+const currentTimeEls = document.querySelectorAll(".current-time");
+function updateTime() {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2,'0');
+  const minutes = now.getMinutes().toString().padStart(2,'0');
+  const timeStr = `${hours}:${minutes}`;
+  currentTimeEls.forEach(el => el.textContent = timeStr);
+}
+// 初始化显示一次
+updateTime();
+// 每秒更新
+setInterval(updateTime, 1000);
+</script>
+
+</body>
+</html>
